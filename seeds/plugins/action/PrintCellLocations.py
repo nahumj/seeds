@@ -33,7 +33,7 @@ class PrintCellLocations(Action, Plugin):
         Base name for files.  The epoch at which the file was created and the
         extension (see format) will also comprise the resulting file name.  For
         example, a filename of 'cell_locations' when run at epoch 1200 would
-        produce the file cell_locations-001200.pdf.  (default:
+        produce the file cell_locations-001200.csv.  (default:
         'cell_locations')
     header
         Whether or not to write a header to the output file.  The header will
