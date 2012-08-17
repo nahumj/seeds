@@ -66,7 +66,7 @@ class PrintCellLocations(Action, Plugin):
 
         self.epoch_start = self.experiment.config.getint(self.config_section, 'epoch_start', 0)
         self.epoch_end = self.experiment.config.getint(self.config_section, 'epoch_end',
-                                                  default=self.experiment.config.getint('Experiment', 'epochs', default=-1))
+            default=self.experiment.config.getint('Experiment', 'epochs', default=-1))
         self.frequency = self.experiment.config.getint(self.config_section, 'frequency', 1)
         self.priority = self.experiment.config.getint(self.config_section, 'priority', 0)
         self.filename = self.experiment.config.get(self.config_section, 'filename', 'cell_locations')
@@ -79,17 +79,22 @@ class PrintCellLocations(Action, Plugin):
 
         filename = "%s-%06d.csv" % (self.filename, self.experiment.epoch)
         data_file = self.datafile_path(filename)
-        self.writer = csv.writer(open(data_file, 'w'))
+        fieldnames = ['epoch','cell_id','node_id','x','y','type']
+        with open(data_file, 'w') as handle:
+            self.writer = csv.DictWriter(open(data_file, 'w'), fieldnames)
+            if self.header:
+                self.writer.writeheader()
 
-        if self.header:
-            header = ['epoch','cell_id','node_id','x','y','type']
-            self.writer.writerow(header)
+            g = self.experiment.population.topology.graph
+            for n in g.nodes():
+                cell = g.node[n]['cell']
+                (xpos, ypos) = cell.coords()
 
-        g = self.experiment.population.topology.graph
-        for n in g.nodes():
-            cell = g.node[n]['cell']
-            (xpos, ypos) = cell.coords()
-
-            row = [self.experiment.epoch, cell.id, cell.node, xpos, ypos, cell.type]
-            self.writer.writerow(row)
+                row = { 'epoch' : self.experiment.epoch,
+                        'cell_id' : cell.id,
+                        'node_id' : cell.node,
+                        'x' : xpos,
+                        'y' : ypos,
+                        'type' : cell.type}
+                self.writer.writerow(row)
 
