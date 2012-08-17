@@ -73,20 +73,21 @@ class PrintCellTypeCount(Action, Plugin):
         self.header = self.experiment.config.getboolean(self.config_section, 'header', default=True)
 
         self.types = self.experiment.population._cell_class.types
+        fieldnames = ['epoch'] + self.types
 
         data_file = self.datafile_path(self.filename)
-        self.writer = csv.writer(open(data_file, 'w'))
+        self.writer = csv.DictWriter(open(data_file, 'w'), fieldnames)
 
         if self.header:
-            header = ['epoch']
-            header += self.types
-            self.writer.writerow(header)
+            self.writer.writeheader()
 
     def update(self):
         """Execute the action"""
         if self.skip_update():
 	        return
 
-        row = [self.experiment.epoch] + self.experiment.data['population']['type_count']
+        row = {'epoch':self.experiment.epoch}
+        for type, count in zip(self.types, self.experiment.data['population']['type_count']):
+            row[type] = count
         self.writer.writerow(row)
 
