@@ -57,8 +57,8 @@ class PrintPopulationTypeClusters(Action):
     __author__ = "Brian Connelly <bdc@msu.edu>"
     __credits__ = "Brian Connelly"
     __description__ = "Print information about the number and size of clusters of each cell type"
-    __type__ = 4        
-    __requirements__ = [] 
+    __type__ = 4
+    __requirements__ = []
 
     def __init__(self, experiment, label=None):
         """Initialize the PrintPopulationTypeClusters Action"""
@@ -76,17 +76,18 @@ class PrintPopulationTypeClusters(Action):
         self.name = "PrintPopulationTypeClusters"
         self.types = self.experiment.population._cell_class.types
 
+        fieldnames = ['epoch', 'total_clusters', 'total_size_mean', 'total_size_std']
+        for t in self.types:
+            fieldnames.append('%s_clusters' % (t))
+            fieldnames.append('%s_size_mean' % (t))
+            fieldnames.append('%s_size_std' % (t))
+
         data_file = self.datafile_path(self.filename)
-        self.writer = csv.writer(open(data_file, 'w'))
+        self.writer = csv.DictWriter(open(data_file, 'w'), fieldnames)
 
         if self.header:
-            header = ['epoch', 'total_clusters', 'total_size_mean', 'total_size_std']
-            for t in self.types:
-                header.append('%s_clusters' % (t))
-                header.append('%s_size_mean' % (t))
-                header.append('%s_size_std' % (t))
-            self.writer.writerow(header)
-      
+            self.writer.writeheader()
+
     def update(self):
         """Execute the Action"""
         if self.skip_update():
@@ -113,15 +114,20 @@ class PrintPopulationTypeClusters(Action):
 
             [unvisited.remove(x) for x in c]
 
-        row = [self.experiment.epoch]
-        row.append(sum(cluster_counts))
-        row.append(mean(cluster_sizes[len(self.types)]))
-        row.append(std(cluster_sizes[len(self.types)]))
+        row = { 'epoch' : self.experiment.epoch,
+                'total_clusters' : sum(cluster_counts),
+                'total_size_mean' : mean(cluster_sizes[len(self.types)]),
+                'total_size_std' : std(cluster_sizes[len(self.types)]) }
 
-        for t in range(len(self.types)):
-            row.append(cluster_counts[t])
-            row.append(mean(cluster_sizes[t]))
-            row.append(std(cluster_sizes[t]))
+        for index, t in enumerate(self.types):
+            if cluster_counts[index] == 0:
+                row['%s_clusters' % (t)] = 0
+                row['%s_size_mean' % (t)] = 0
+                row['%s_size_std' % (t)] = 0
+            else:
+                row['%s_clusters' % (t)] = cluster_counts[index]
+                row['%s_size_mean' % (t)] = mean(cluster_sizes[index])
+                row['%s_size_std' % (t)] = std(cluster_sizes[index])
 
         self.writer.writerow(row)
 
