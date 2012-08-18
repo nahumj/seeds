@@ -61,8 +61,8 @@ class PrintResourceStats(Action, Plugin):
     __author__ = "Brian Connelly <bdc@msu.edu>"
     __credits__ = "Brian Connelly"
     __description__ = "Print infomration about the distribution of the given resource"
-    __type__ = 4        
-    __requirements__ = [] 
+    __type__ = 4
+    __requirements__ = []
 
     def __init__(self, experiment, label=None):
         """Initialize the PrintResourceStats Action"""
@@ -86,11 +86,11 @@ class PrintResourceStats(Action, Plugin):
 
         full_filename = "%s-%s.csv" % (self.filename, self.resource)
         data_file = self.datafile_path(full_filename)
-        self.writer = csv.writer(open(data_file, 'w'))
+        fieldnames = ['epoch', 'mean', 'standard_deviation', 'available']
+        self.writer = csv.DictWriter(open(data_file, 'w'), fieldnames)
 
         if self.header:
-            header = ['epoch', 'mean', 'standard_deviation', 'available']
-            self.writer.writerow(header)
+            self.writer.writerowheader()
 
     def update(self):
         """Execute the action"""
@@ -98,6 +98,9 @@ class PrintResourceStats(Action, Plugin):
 	        return
 
         levels = self.experiment.data['resources'][self.resource]['levels']
-        row = [self.experiment.epoch, mean(levels), std(levels), int(self.res.available)]
+        row = { 'epoch' : self.experiment.epoch,
+                'mean' : mean(levels),
+                'standard_deviation' : std(levels),
+                'available' : int(self.res.available)}
         self.writer.writerow(row)
 
