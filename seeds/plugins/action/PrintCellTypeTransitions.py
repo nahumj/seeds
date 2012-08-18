@@ -76,29 +76,28 @@ class PrintCellTypeTransitions(Action, Plugin):
         self.max_types = self.experiment.population._cell_class.max_types
 
         data_file = self.datafile_path(self.filename)
-        self.writer = csv.writer(open(data_file, 'w'))
+        self.transitions = ['%s->%s' % (ftype, ttype) for ftype in self.types for ttype in self.types]
+        fieldnames = ['epoch'] + self.transitions
+        self.writer = csv.DictWriter(open(data_file, 'w'), fieldnames)
 
         if self.header:
-            header = ['epoch']
-
-            for ftype in self.types:
-                for ttype in self.types:
-                    header += ['%s->%s' % (ftype, ttype)]
-
-            self.writer.writerow(header)
+            self.writer.writeheader()
 
     def update(self):
         """Execute the action"""
         if self.skip_update():
 	        return
 
-        row = [self.experiment.epoch]
+        row = {'epoch' : self.experiment.epoch}
 
         if self.experiment.epoch == 0:
-            row += [0] * (self.max_types * self.max_types)
+            for transition in self.transitions:
+                row[transition] = 0
         else:
-            for f in range(self.max_types):
-                for t in range(self.max_types):
-                    row.append(self.experiment.data['population']['transitions'][f][t])
+            trans_counts = [self.experiment.data['population']['transitions'][f][t]
+                    for f in range(self.max_types)
+                    for t in range(self.max_types)]
+            for transition, count in zip (self.transitions, trans_counts):
+                row[transition] = count
 
         self.writer.writerow(row)

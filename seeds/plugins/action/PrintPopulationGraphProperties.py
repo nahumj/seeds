@@ -59,8 +59,8 @@ class PrintPopulationGraphProperties(Action, Plugin):
     __author__ = "Brian Connelly <bdc@msu.edu>"
     __credits__ = "Brian Connelly"
     __description__ = "Print a number of graph measures for the population graph"
-    __type__ = 4        
-    __requirements__ = [] 
+    __type__ = 4
+    __requirements__ = []
 
     def __init__(self, experiment, label=None):
         """Initialize the PrintPopulationGraphProperties Action"""
@@ -77,14 +77,14 @@ class PrintPopulationGraphProperties(Action, Plugin):
         self.header = self.experiment.config.get(self.config_section, 'header', default=True)
 
         data_file = self.datafile_path(self.filename)
-        self.writer = csv.writer(open(data_file, 'w'))
-
-        if self.header:
-            header = ['epoch', 'nodes', 'edges', 'avg_degree', 'std_degree',
+        fieldnames = ['epoch', 'nodes', 'edges', 'avg_degree', 'std_degree',
                       'avg_clustering_coefficient','diameter',
                       'num_connected_components']
-            self.writer.writerow(header)
-      
+        self.writer = csv.DictWriter(open(data_file, 'w'), fieldnames)
+
+        if self.header:
+            self.writer.writeheader()
+
     def update(self):
         """Execute the Action"""
         if self.skip_update():
@@ -92,6 +92,13 @@ class PrintPopulationGraphProperties(Action, Plugin):
 
         g = self.experiment.population.topology.graph
         degrees = list(nx.degree(g).values())
-        row = [self.experiment.epoch, nx.number_of_nodes(g), nx.number_of_edges(g), mean(degrees), std(degrees), nx.average_clustering(g), nx.diameter(g), nx.number_connected_components(g)]
+        row = { 'epoch' : self.experiment.epoch,
+                'nodes' : nx.number_of_nodes(g),
+                'edges' : nx.number_of_edges(g),
+                'avg_degree' : mean(degrees),
+                'std_degree' : std(degrees),
+                'avg_clustering_coefficient' : nx.average_clustering(g),
+                'diameter' : nx.diameter(g),
+                'num_connected_components' : nx.number_connected_components(g)}
         self.writer.writerow(row)
 
